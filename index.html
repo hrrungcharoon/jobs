@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>สมัครงาน | บริษัท รุ่งจรูญ แอนด์ ซันส์ จำกัด</title>
+<meta name="description" content="กรอกใบสมัครงานออนไลน์ บริษัท รุ่งจรูญ แอนด์ ซันส์ จำกัด">
+<!-- ตัวอย่างลิงก์เวลาแชร์ใน LINE / Facebook -->
+<meta property="og:title" content="สมัครงานออนไลน์ - บริษัท รุ่งจรูญ แอนด์ ซันส์ จำกัด">
+<meta property="og:description" content="กรอกใบสมัครงานออนไลน์ได้ทันที ทั้งบนมือถือและคอมพิวเตอร์">
+<meta property="og:type" content="website">
+<meta name="theme-color" content="#1f3a5f">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%231f3a5f'/%3E%3Ctext x='50' y='68' font-size='54' text-anchor='middle' fill='%23c9a24b' font-family='Arial' font-weight='bold'%3ER%3C/text%3E%3C/svg%3E">
+<style>
+  html,body{margin:0;height:100%;background:#f3f5f9;font-family:system-ui,'Noto Sans Thai',sans-serif}
+  iframe{position:fixed;inset:0;width:100%;height:100%;border:0;display:block}
+  .loading{position:fixed;inset:0;z-index:2;background:#f3f5f9;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;color:#1f3a5f;text-align:center;padding:16px}
+  .spin{width:38px;height:38px;border:4px solid #dde3ec;border-top-color:#1f3a5f;border-radius:50%;animation:s .8s linear infinite}
+  @keyframes s{to{transform:rotate(360deg)}}
+  .loading a{color:#2c4f7c;font-size:14px}
+  .hide{display:none}
+</style>
+</head>
+<body>
+  <div class="loading" id="loading">
+    <div class="spin"></div>
+    <div>กำลังเปิดใบสมัครงาน...</div>
+    <a id="direct" target="_top">ถ้าหน้าไม่ขึ้น กดที่นี่เพื่อเปิดใบสมัคร</a>
+  </div>
+  <iframe id="app" title="ใบสมัครงาน" allow="camera; clipboard-write"></iframe>
+
+<script>
+  // ลิงก์เว็บแอป Apps Script (ลิงก์ /exec) — ถ้า Deploy ใหม่แล้วลิงก์เปลี่ยน ให้แก้บรรทัดนี้บรรทัดเดียว
+  var APP_URL = 'https://script.google.com/macros/s/AKfycbxUYJpwsG6kGaKSNNja9pWLm1I4ckLuHNuQ6nnKneqUlUw51OTWZFPc0KIRIHQWCjcb/exec';
+
+  document.getElementById('direct').href = APP_URL;
+  var f = document.getElementById('app');
+  f.addEventListener('load', function () { document.getElementById('loading').className = 'loading hide'; });
+  f.src = APP_URL;
+</script>
+</body>
+</html>
