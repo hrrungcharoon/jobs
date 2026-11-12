@@ -41,7 +41,16 @@ const DEFAULT_SETTINGS = {
   replyTo: '',                 // อีเมลรับการตอบกลับ (เว้นว่าง = อีเมลบัญชีนี้)
   autoReplyEnabled: false,     // ส่งอีเมลตอบรับอัตโนมัติเมื่อมีผู้สมัคร
   autoReplyTemplate: 'ได้รับใบสมัครแล้ว',
-  emailTemplates: null         // null = ใช้แม่แบบเริ่มต้นใน Mailing.gs
+  emailTemplates: null,        // null = ใช้แม่แบบเริ่มต้นใน Mailing.gs
+  interviewInfo: {             // ข้อมูลในนัดสัมภาษณ์ (แก้ได้ในแท็บ "นัดสัมภาษณ์" ระบบจำค่าล่าสุดไว้)
+    location: 'บริษัท รุ่งจรูญ แอนด์ ซันส์ จำกัด',
+    interviewer: 'ตัวแทนผู้บริหาร',
+    contact: 'ฝ่ายทรัพยากรบุคคล (คุณเฟิร์ส)',
+    address: 'บริษัท รุ่งจรูญ แอนด์ ซันส์ จำกัด 10 ซอยสุขสวัสดิ์ 30 แยก 8-1 ถนนสุขสวัสดิ์ บางปะกอก ราษฎร์บูรณะ กรุงเทพฯ 10140 ประเทศไทย',
+    phone: '092-4992524',
+    email: 'hrrungcharoon@gmail.com',
+    line: '@050yvncd'
+  }
 };
 
 const FIXED_HEAD = ['เลขที่ใบสมัคร', 'วันที่สมัคร'];
@@ -315,10 +324,17 @@ function getSettings_() {
 function mergeSettings_(s) {
   const d = JSON.parse(JSON.stringify(DEFAULT_SETTINGS));
   Object.keys(s || {}).forEach(function (k) {
-    if (k === 'lists' || k === 'personality') d[k] = Object.assign(d[k], s[k] || {});
+    if (k === 'lists' || k === 'personality' || k === 'interviewInfo') d[k] = Object.assign(d[k], s[k] || {});
     else d[k] = s[k];
   });
   if (!Array.isArray(d.emailTemplates) || !d.emailTemplates.length) d.emailTemplates = JSON.parse(JSON.stringify(DEFAULT_EMAIL_TEMPLATES));
+  // อัปเดตแม่แบบ "นัดสัมภาษณ์" รุ่นเก่า (ที่ยังไม่ได้แก้เอง) เป็นรูปแบบใหม่
+  d.emailTemplates = d.emailTemplates.map(function (t) {
+    if (t.name === 'นัดสัมภาษณ์' && t.subject === 'นัดสัมภาษณ์งานตำแหน่ง {{ตำแหน่ง}} - {{บริษัท}}') {
+      return JSON.parse(JSON.stringify(DEFAULT_EMAIL_TEMPLATES.filter(function (x) { return x.name === 'นัดสัมภาษณ์'; })[0]));
+    }
+    return t;
+  });
   return d;
 }
 

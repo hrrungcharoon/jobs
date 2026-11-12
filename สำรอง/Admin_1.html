@@ -137,10 +137,18 @@
         <div><label class="lb">วันที่สัมภาษณ์</label><input type="date" id="ivDate"></div>
         <div><label class="lb">เวลาเริ่ม (คนแรก)</label><input type="time" id="ivTime" value="10:00"></div>
         <div><label class="lb">เวลาสัมภาษณ์ต่อคน</label><select id="ivMin"><option value="15">15 นาที</option><option value="30" selected>30 นาที</option><option value="45">45 นาที</option><option value="60">1 ชั่วโมง</option><option value="90">1 ชั่วโมงครึ่ง</option></select></div>
-        <div><label class="lb">สถานที่</label><input type="text" id="ivLoc" placeholder="เช่น สำนักงานใหญ่ ซอยสุขสวัสดิ์ 30 ชั้น 2"></div>
-        <div><label class="lb">ผู้ติดต่อ (ใส่ในอีเมล)</label><input type="text" id="ivContact" placeholder="เช่น คุณ... ฝ่ายบุคคล"></div>
-        <div><label class="lb">เบอร์ติดต่อ</label><input type="text" id="ivPhone" placeholder="เช่น 02-849-1301 ต่อ 115"></div>
+        <div><label class="lb">สถานที่</label><input type="text" id="ivLoc" placeholder="เช่น บริษัท รุ่งจรูญ แอนด์ ซันส์ จำกัด"></div>
+        <div><label class="lb">ผู้สัมภาษณ์</label><input type="text" id="ivInterviewer" placeholder="เช่น ตัวแทนผู้บริหาร"></div>
       </div>
+      <details style="margin-top:12px"><summary style="cursor:pointer;font-weight:600;color:var(--navy)">ข้อมูลติดต่อที่แสดงในนัด (ระบบจำค่าล่าสุดไว้ให้)</summary>
+        <div class="grid2" style="margin-top:4px">
+          <div><label class="lb">ติดต่อ</label><input type="text" id="ivContact" placeholder="เช่น ฝ่ายทรัพยากรบุคคล (คุณเฟิร์ส)"></div>
+          <div><label class="lb">โทร.</label><input type="text" id="ivPhone" placeholder="เช่น 092-4992524"></div>
+          <div><label class="lb">อีเมล</label><input type="text" id="ivEmail"></div>
+          <div><label class="lb">LINE</label><input type="text" id="ivLine" placeholder="เช่น @050yvncd"></div>
+        </div>
+        <label class="lb">ที่อยู่</label><textarea id="ivAddr" style="min-height:56px"></textarea>
+      </details>
       <label class="lb">อีเมลผู้สัมภาษณ์ (ไม่บังคับ — ระบบจะเชิญเข้านัดด้วย คั่นด้วยจุลภาค)</label>
       <input type="text" id="ivWho" placeholder="เช่น manager@rungcharoon.com, sale.head@gmail.com">
       <label class="lb">หมายเหตุในนัด (ไม่บังคับ)</label><input type="text" id="ivNote" placeholder="เช่น ให้นำบัตรประชาชนและวุฒิการศึกษามาด้วย">
@@ -286,6 +294,9 @@
     $('quota').textContent = INFO.quota;
     $('varChips').innerHTML = (INFO.emailVars || []).map(v => '<button type="button" class="btn ghost sm" data-ins="' + esc(v) + '" style="margin:2px">{{' + esc(v) + '}}</button>').join('');
     drawTemplates();
+    const II = S.interviewInfo || {};
+    $('ivLoc').value = II.location || ''; $('ivInterviewer').value = II.interviewer || ''; $('ivContact').value = II.contact || '';
+    $('ivPhone').value = II.phone || ''; $('ivEmail').value = II.email || ''; $('ivLine').value = II.line || ''; $('ivAddr').value = II.address || '';
     $('ivTpl').innerHTML = (S.emailTemplates || []).map(t => '<option' + (t.name === 'นัดสัมภาษณ์' ? ' selected' : '') + '>' + esc(t.name) + '</option>').join('');
     $('ivSt').innerHTML = '<option value="">— ไม่เปลี่ยน —</option>' + (S.lists.status || []).map(s => '<option' + (s === 'นัดสัมภาษณ์' ? ' selected' : '') + '>' + esc(s) + '</option>').join('');
     setDirty(false);
@@ -426,7 +437,7 @@
     const list = APPS.filter(a => SEL.has(a.row));
     const t = ($('ivTime').value || '10:00').split(':').map(Number), m = +$('ivMin').value;
     return list.map((a, i) => { const s = t[0] * 60 + t[1] + i * m, e = s + m;
-      return {a, when: pad2(Math.floor(s / 60) % 24) + ':' + pad2(s % 60) + ' - ' + pad2(Math.floor(e / 60) % 24) + ':' + pad2(e % 60) + ' น.'}; });
+      return {a, when: (Math.floor(s / 60) % 24) + '.' + pad2(s % 60) + ' - ' + (Math.floor(e / 60) % 24) + '.' + pad2(e % 60) + ' น.'}; });
   }
   function ivPreview(){
     const sl = ivSlots();
@@ -439,7 +450,8 @@
     if (!$('ivDate').value) return toast('กรุณาเลือกวันที่สัมภาษณ์');
     if (!confirm('สร้างนัดสัมภาษณ์ ' + SEL.size + ' คน ในวันที่เลือก?')) return;
     const req = {rows: ivSlots().map(x => x.a.row), date: $('ivDate').value, time: $('ivTime').value, minutes: +$('ivMin').value,
-      location: $('ivLoc').value.trim(), interviewers: $('ivWho').value, note: $('ivNote').value.trim(), invite: $('ivInvite').checked,
+      location: $('ivLoc').value.trim(), interviewer: $('ivInterviewer').value.trim(), address: $('ivAddr').value.trim(),
+      contactEmail: $('ivEmail').value.trim(), line: $('ivLine').value.trim(), interviewers: $('ivWho').value, note: $('ivNote').value.trim(), invite: $('ivInvite').checked,
       sendEmail: $('ivMail').checked, templateName: $('ivTpl').value, contact: $('ivContact').value.trim(), contactPhone: $('ivPhone').value.trim(), setStatus: $('ivSt').value};
     $('ivBtn').disabled = true; $('ivBtn').textContent = 'กำลังสร้างนัด...';
     call('adminScheduleInterviews', req).then(r => {
