@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<base target="_top">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{--navy:#1f3a5f;--navy-2:#2c4f7c;--gold:#c9a24b;--bg:#f3f5f9;--text:#1d2433;--muted:#5f6b7f;--line:#dde3ec;--err:#c0392b;--ok:#1e8e5a}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:'Noto Sans Thai',system-ui,sans-serif;background:var(--bg);color:var(--text);line-height:1.55;font-size:15px}
+  header{background:var(--navy);color:#fff;padding:14px 20px;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+  header b{font-size:17px} header small{opacity:.75;display:block;font-size:12.5px}
+  header button{background:transparent;color:#fff;border:1px solid rgba(255,255,255,.4);border-radius:8px;padding:6px 12px;font:inherit;cursor:pointer}
+  .wrap{max-width:1100px;margin:0 auto;padding:18px 16px 40px}
+  .tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
+  .tabs button{font:inherit;border:1.5px solid var(--line);background:#fff;border-radius:999px;padding:7px 16px;cursor:pointer;color:var(--navy)}
+  .tabs button.on{background:var(--navy);color:#fff;border-color:var(--navy)}
+  .card{background:#fff;border-radius:14px;box-shadow:0 2px 10px rgba(20,40,80,.07);padding:20px;margin-bottom:14px}
+  h2{margin:0 0 4px;color:var(--navy);font-size:19px} .muted{color:var(--muted);font-size:14px}
+  input[type=text],input[type=password],input[type=email],input[type=date],input[type=time],textarea,select{width:100%;font:inherit;padding:9px 11px;border:1.5px solid var(--line);border-radius:9px;background:#fbfcfe;outline:none}
+  input:focus,textarea:focus,select:focus{border-color:var(--navy-2);background:#fff}
+  textarea{min-height:80px;resize:vertical}
+  label.lb{display:block;font-weight:600;margin:12px 0 5px}
+  .btn{font:inherit;font-weight:600;border:0;border-radius:9px;padding:9px 18px;cursor:pointer;background:var(--navy);color:#fff}
+  .btn.ghost{background:#fff;color:var(--navy);border:1.5px solid var(--line)}
+  .btn.sm{padding:5px 11px;font-size:13.5px;font-weight:500}
+  .btn.red{background:#fff;color:var(--err);border:1.5px solid #f1c6c1}
+  .btn:disabled{opacity:.55;cursor:wait}
+  .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  .savebar{position:sticky;bottom:0;background:rgba(243,245,249,.95);padding:12px 0;display:flex;gap:10px;align-items:center}
+  .pos{border:1.5px solid var(--line);border-radius:12px;padding:12px;margin-top:10px;display:grid;grid-template-columns:1fr auto;gap:8px}
+  .pos.closed{opacity:.6;background:#fafafa}
+  .pos .tools{display:flex;flex-direction:column;gap:6px;align-items:stretch}
+  .switch{display:inline-flex;align-items:center;gap:6px;cursor:pointer;user-select:none;font-size:14px}
+  .switch input{width:18px;height:18px;accent-color:var(--ok)}
+  table{width:100%;border-collapse:collapse}
+  th,td{padding:8px 6px;border-bottom:1px solid var(--line);text-align:left;vertical-align:middle;font-size:14px}
+  th{color:var(--muted);font-weight:600;font-size:13px;white-space:nowrap}
+  .tbl-wrap{overflow-x:auto}
+  td a{color:var(--navy-2)}
+  .chip{display:inline-block;padding:2px 9px;border-radius:999px;background:#eef3fa;color:var(--navy);font-size:12.5px}
+  .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#1d2433;color:#fff;padding:10px 18px;border-radius:10px;opacity:0;transition:opacity .2s;pointer-events:none;z-index:20;max-width:90vw}
+  .toast.on{opacity:1}
+  .login{max-width:380px;margin:12vh auto}
+  .hidden{display:none !important}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .item-row{display:grid;grid-template-columns:1fr 180px auto;gap:8px;margin-top:6px}
+  @media (max-width:700px){.grid2{grid-template-columns:1fr}.item-row{grid-template-columns:1fr 120px auto}}
+</style>
+</head>
+<body>
+<div id="loginView" class="login card">
+  <h2>หน้าผู้ดูแลระบบใบสมัคร</h2>
+  <p class="muted"><?= companyName ?></p>
+  <label class="lb">รหัสผ่าน</label>
+  <input type="password" id="pw" autocomplete="current-password">
+  <div class="row" style="margin-top:14px"><button class="btn" id="loginBtn">เข้าสู่ระบบ</button><span id="loginErr" style="color:var(--err)"></span></div>
+</div>
+
+<div id="appView" class="hidden">
+  <header>
+    <div><b>ระบบใบสมัครงาน (ผู้ดูแล)</b><small><?= companyName ?></small></div>
+    <div class="row"><a id="openForm" target="_blank"><button>เปิดหน้าสมัครงาน ↗</button></a><a id="openSheet" target="_blank"><button>เปิด Google Sheet ↗</button></a><button id="logout">ออกจากระบบ</button></div>
+  </header>
+  <div class="wrap">
+    <div class="card hidden" id="pwWarn" style="background:#fff8e6;border:1px solid #f0dca8">⚠️ ยังใช้รหัสผ่านเริ่มต้นอยู่ กรุณาเปลี่ยนที่แท็บ "ตั้งค่า"</div>
+    <div class="tabs" id="tabs">
+      <button data-t="apps" class="on">ผู้สมัคร</button>
+      <button data-t="mail">ส่งอีเมล</button>
+      <button data-t="iv">นัดสัมภาษณ์</button>
+      <button data-t="merge">ไฟล์ Mail Merge</button>
+      <button data-t="pos">ตำแหน่งงาน</button>
+      <button data-t="lists">ตัวเลือกในฟอร์ม</button>
+      <button data-t="pers">แบบประเมินบุคลิกภาพ</button>
+      <button data-t="set">ตั้งค่า</button>
+    </div>
+
+    <section data-p="apps" class="card">
+      <div class="row" style="justify-content:space-between">
+        <div><h2>รายชื่อผู้สมัคร</h2><div class="muted">500 รายการล่าสุด — แก้ไขข้อมูลได้ใน Google Sheet แล้วกด "สร้างใบสมัคร" ใหม่</div></div>
+        <button class="btn ghost sm" id="reloadApps">↻ โหลดใหม่</button>
+      </div>
+      <div class="row" style="margin:12px 0">
+        <input type="text" id="q" placeholder="ค้นหาชื่อ / เบอร์ / เลขที่ใบสมัคร" style="flex:2;min-width:200px">
+        <select id="fPos" style="flex:1;min-width:150px"><option value="">ทุกตำแหน่ง</option></select>
+        <select id="fSt" style="flex:1;min-width:130px"><option value="">ทุกสถานะ</option></select>
+      </div>
+      <div class="row" style="margin-bottom:8px">
+        <span class="muted" id="selInfo">เลือก 0 คน</span>
+        <button class="btn sm" id="toMail" disabled>✉️ ส่งอีเมลถึงคนที่เลือก</button>
+        <button class="btn sm" id="toIv" disabled>📅 นัดสัมภาษณ์คนที่เลือก</button>
+      </div>
+      <div class="tbl-wrap"><table>
+        <thead><tr><th><input type="checkbox" id="selAll" title="เลือกทั้งหมดที่แสดง"></th><th>เลขที่</th><th>วันที่สมัคร</th><th>ชื่อ-สกุล</th><th>ตำแหน่ง</th><th>เบอร์</th><th>สถานะ</th><th>ใบสมัคร</th><th></th></tr></thead>
+        <tbody id="appRows"><tr><td colspan="9" class="muted">กำลังโหลด...</td></tr></tbody>
+      </table></div>
+    </section>
+
+    <section data-p="mail" class="card hidden">
+      <h2>ส่งอีเมลหาผู้สมัคร</h2>
+      <div class="muted">เลือกผู้สมัครที่แท็บ "ผู้สมัคร" ก่อน ระบบจะแทนชื่อ ตำแหน่ง ฯลฯ ของแต่ละคนให้อัตโนมัติ · โควตาวันนี้เหลือ <b id="quota">-</b> ฉบับ</div>
+      <div class="card" style="background:#f6f8fc;box-shadow:none;margin:12px 0;padding:12px">
+        <b>ผู้รับ: <span id="rcptCount">0</span> คน</b>
+        <div class="muted" id="rcptList" style="margin-top:4px">ยังไม่ได้เลือก</div>
+      </div>
+      <div class="grid2">
+        <div><label class="lb">แม่แบบอีเมล</label><select id="tplSel"></select></div>
+        <div><label class="lb">หลังส่งแล้ว เปลี่ยนสถานะเป็น</label><select id="afterSt"><option value="">— ไม่เปลี่ยน —</option></select></div>
+      </div>
+      <label class="lb">หัวเรื่อง</label><input type="text" id="mSubject">
+      <label class="lb">เนื้อความ</label><textarea id="mBody" style="min-height:220px"></textarea>
+      <div class="muted" style="margin-top:6px">คลิกเพื่อแทรกตัวแปร: <span id="varChips"></span></div>
+      <label class="lb">ข้อมูลเพิ่มเติม (ใช้แทน {{วันนัด}} {{เวลา}} {{สถานที่}} {{ผู้ติดต่อ}} {{เบอร์ติดต่อ}})</label>
+      <div class="grid2">
+        <input type="text" data-var="วันนัด" placeholder="วันนัด เช่น วันจันทร์ที่ 9 พฤศจิกายน 2569">
+        <input type="text" data-var="เวลา" placeholder="เวลา เช่น 10:00 น.">
+        <input type="text" data-var="สถานที่" placeholder="สถานที่ เช่น สำนักงานใหญ่ ซอยสุขสวัสดิ์ 30">
+        <input type="text" data-var="ผู้ติดต่อ" placeholder="ผู้ติดต่อ เช่น คุณ... ฝ่ายบุคคล">
+        <input type="text" data-var="เบอร์ติดต่อ" placeholder="เบอร์ติดต่อ เช่น 02-849-1301 ต่อ 115">
+      </div>
+      <label class="lb">ตัวอย่าง (ผู้รับคนแรก)</label>
+      <div id="mPreview" style="border:1.5px solid var(--line);border-radius:10px;padding:14px;white-space:pre-wrap;background:#fff;min-height:80px"></div>
+      <div class="row" style="margin-top:12px">
+        <button class="btn" id="sendBtn">📨 ส่งอีเมล</button>
+        <button class="btn ghost" id="testBtn">ส่งทดสอบถึงตัวเอง</button>
+        <button class="btn ghost" id="saveTpl">บันทึกเป็นแม่แบบ</button>
+        <button class="btn red sm" id="delTpl">ลบแม่แบบนี้</button>
+      </div>
+      <div class="muted" id="sendResult" style="margin-top:10px"></div>
+    </section>
+
+    <section data-p="iv" class="card hidden">
+      <h2>นัดสัมภาษณ์ (ลง Google Calendar)</h2>
+      <div class="muted">เลือกผู้สมัครที่แท็บ "ผู้สมัคร" ก่อน · เลือกหลายคน ระบบจะจัดคิวต่อกันตามระยะเวลาที่ตั้งไว้ · นัดจะลงในปฏิทินของบัญชี Google ที่ติดตั้งระบบ</div>
+      <div class="grid2" style="margin-top:6px">
+        <div><label class="lb">วันที่สัมภาษณ์</label><input type="date" id="ivDate"></div>
+        <div><label class="lb">เวลาเริ่ม (คนแรก)</label><input type="time" id="ivTime" value="10:00"></div>
+        <div><label class="lb">เวลาสัมภาษณ์ต่อคน</label><select id="ivMin"><option value="15">15 นาที</option><option value="30" selected>30 นาที</option><option value="45">45 นาที</option><option value="60">1 ชั่วโมง</option><option value="90">1 ชั่วโมงครึ่ง</option></select></div>
+        <div><label class="lb">สถานที่</label><input type="text" id="ivLoc" placeholder="เช่น สำนักงานใหญ่ ซอยสุขสวัสดิ์ 30 ชั้น 2"></div>
+        <div><label class="lb">ผู้ติดต่อ (ใส่ในอีเมล)</label><input type="text" id="ivContact" placeholder="เช่น คุณ... ฝ่ายบุคคล"></div>
+        <div><label class="lb">เบอร์ติดต่อ</label><input type="text" id="ivPhone" placeholder="เช่น 02-849-1301 ต่อ 115"></div>
+      </div>
+      <label class="lb">อีเมลผู้สัมภาษณ์ (ไม่บังคับ — ระบบจะเชิญเข้านัดด้วย คั่นด้วยจุลภาค)</label>
+      <input type="text" id="ivWho" placeholder="เช่น manager@rungcharoon.com, sale.head@gmail.com">
+      <label class="lb">หมายเหตุในนัด (ไม่บังคับ)</label><input type="text" id="ivNote" placeholder="เช่น ให้นำบัตรประชาชนและวุฒิการศึกษามาด้วย">
+      <div style="margin-top:12px;display:flex;flex-direction:column;gap:8px">
+        <label class="switch"><input type="checkbox" id="ivInvite" checked> ส่งคำเชิญปฏิทิน (Google Calendar) ให้ผู้สมัคร — ผู้สมัครกด "ตอบรับ" ได้</label>
+        <label class="switch"><input type="checkbox" id="ivMail" checked> ส่งอีเมลนัดสัมภาษณ์ด้วยแม่แบบ <select id="ivTpl" style="width:auto;margin-left:6px"></select></label>
+        <label class="switch">หลังนัดแล้ว เปลี่ยนสถานะเป็น <select id="ivSt" style="width:auto;margin-left:6px"></select></label>
+      </div>
+      <label class="lb">ตารางนัด</label>
+      <div class="tbl-wrap"><table><thead><tr><th>#</th><th>ผู้สมัคร</th><th>ตำแหน่ง</th><th>เวลา</th><th>อีเมล</th></tr></thead><tbody id="ivRows"><tr><td colspan="5" class="muted">ยังไม่ได้เลือกผู้สมัคร</td></tr></tbody></table></div>
+      <div class="row" style="margin-top:12px"><button class="btn" id="ivBtn">📅 สร้างนัดสัมภาษณ์</button><a id="ivCal" target="_blank" class="hidden">เปิด Google Calendar ↗</a></div>
+      <div class="muted" id="ivResult" style="margin-top:10px"></div>
+    </section>
+
+    <section data-p="merge" class="card hidden">
+      <h2>ไฟล์ข้อมูลสำหรับ Mail Merge</h2>
+      <div class="muted">ไฟล์ Excel 1 แถว = ผู้สมัคร 1 คน, 1 คอลัมน์ = 1 ช่องที่ผู้สมัครกรอก (ครบทุกช่อง ค่าตามที่กรอก) — ใช้ทำ Mail Merge ใน Word ได้เลย</div>
+      <ol style="line-height:1.9;margin:12px 0 0;padding-left:22px">
+        <li>กด <b>"⬇️ ดาวน์โหลดไฟล์ Excel"</b> (ระบบใส่ข้อมูลล่าสุดให้ก่อนดาวน์โหลด)</li>
+        <li>เก็บไฟล์ไว้ที่เดิมชื่อเดิมทุกครั้ง (บันทึกทับ) ไฟล์ Word จะดึงข้อมูลใหม่ได้เลย</li>
+        <li>ใน Word: <b>การส่งจดหมาย → เลือกผู้รับ → ใช้รายการที่มีอยู่</b> → เลือกไฟล์นี้ → แผ่นงาน <b>ข้อมูลผู้สมัคร</b> แล้ว <b>แทรกเขตข้อมูลผสาน</b> ตามช่องที่ต้องการ</li>
+      </ol>
+      <div class="row" style="margin-top:14px"><button class="btn" id="mmBtn">⬇️ ดาวน์โหลดไฟล์ Excel</button><a id="mmLink" target="_blank" class="hidden">เปิดไฟล์ใน Google Sheet ↗</a></div>
+    </section>
+
+    <section data-p="pos" class="card hidden">
+      <h2>ตำแหน่งงานที่เปิดรับ</h2>
+      <div class="muted">ตำแหน่งที่ "เปิดรับ" จะแสดงให้ผู้สมัครเลือก รายละเอียดจะแสดงเมื่อผู้สมัครเลือกตำแหน่งนั้น</div>
+      <div id="posList"></div>
+      <button class="btn ghost" id="addPos" style="margin-top:12px">+ เพิ่มตำแหน่ง</button>
+    </section>
+
+    <section data-p="lists" class="card hidden">
+      <h2>ตัวเลือกในฟอร์ม</h2>
+      <div class="muted">ใส่ 1 ตัวเลือกต่อ 1 บรรทัด</div>
+      <div class="grid2">
+        <div><label class="lb">คำนำหน้าชื่อ</label><textarea data-list="titles"></textarea></div>
+        <div><label class="lb">ศาสนา (ตัวช่วยเลือก ผู้สมัครพิมพ์เองได้)</label><textarea data-list="religions"></textarea></div>
+        <div><label class="lb">กรุ๊ปเลือด</label><textarea data-list="blood"></textarea></div>
+        <div><label class="lb">สถานะใบสมัคร (สำหรับ HR)</label><textarea data-list="status"></textarea></div>
+      </div>
+      <label class="lb">ข้อความต้อนรับบนหน้าสมัครงาน</label>
+      <textarea id="intro"></textarea>
+    </section>
+
+    <section data-p="pers" class="card hidden">
+      <h2>แบบประเมินบุคลิกภาพ</h2>
+      <label class="switch" style="margin-top:8px"><input type="checkbox" id="pEnabled"> แสดงแบบประเมินในหน้าสมัครงาน</label>
+      <div class="grid2">
+        <div><label class="lb">ชื่อแบบประเมิน</label><input type="text" id="pTitle"></div>
+        <div><label class="lb">กลุ่มผลลัพธ์ (1 กลุ่มต่อบรรทัด)</label><textarea id="pGroups" style="min-height:44px"></textarea></div>
+      </div>
+      <label class="lb">คำแนะนำสำหรับผู้สมัคร</label><textarea id="pInst" style="min-height:60px"></textarea>
+      <label class="lb">ข้อพฤติกรรม <span class="muted" id="pCount"></span></label>
+      <div class="muted">ผู้สมัครจะไม่เห็นชื่อกลุ่ม ระบบจะนับจำนวนข้อที่เลือกในแต่ละกลุ่มให้ HR</div>
+      <div id="pItems"></div>
+      <div class="row" style="margin-top:10px"><button class="btn ghost sm" id="pAdd">+ เพิ่มข้อ</button><button class="btn ghost sm" id="pBulkBtn">วางหลายข้อพร้อมกัน</button></div>
+      <div id="pBulk" class="hidden" style="margin-top:10px">
+        <div class="muted">วางทีละบรรทัดในรูปแบบ <b>ข้อความ | กลุ่ม</b> (คัดลอก 2 คอลัมน์จาก Excel/Sheet มาวางได้เลย)</div>
+        <textarea id="pBulkText" style="min-height:140px"></textarea>
+        <button class="btn sm" id="pBulkAdd" style="margin-top:6px">เพิ่มรายการ</button>
+      </div>
+    </section>
+
+    <section data-p="set" class="card hidden">
+      <h2>ตั้งค่า</h2>
+      <div class="grid2">
+        <div><label class="lb">อีเมลแจ้งเตือนเมื่อมีผู้สมัครใหม่ (เว้นว่าง = ไม่แจ้ง)</label><input type="email" id="notify"></div>
+        <div><label class="lb">ไฟล์ PDF</label><label class="switch"><input type="checkbox" id="makePdf"> สร้าง PDF คู่กับ Google Doc อัตโนมัติ</label></div>
+        <div><label class="lb">ชื่อผู้ส่งอีเมล</label><input type="text" id="senderName" placeholder="เช่น ฝ่ายบุคคล บริษัท รุ่งจรูญ แอนด์ ซันส์ จำกัด"></div>
+        <div><label class="lb">อีเมลรับการตอบกลับ (Reply-To)</label><input type="email" id="replyTo" placeholder="เว้นว่าง = อีเมลบัญชีนี้"></div>
+        <div><label class="lb">อีเมลตอบรับอัตโนมัติ</label><label class="switch"><input type="checkbox" id="autoReply"> ส่งอีเมลหาผู้สมัครทันทีที่ส่งใบสมัคร</label></div>
+        <div><label class="lb">แม่แบบที่ใช้ตอบรับอัตโนมัติ</label><select id="autoTpl"></select></div>
+      </div>
+      <label class="lb">ลิงก์ที่เกี่ยวข้อง</label>
+      <div class="muted" id="links"></div>
+      <label class="lb">เปลี่ยนรหัสผ่านหน้าผู้ดูแล</label>
+      <div class="row"><input type="password" id="newPw" placeholder="รหัสผ่านใหม่ (อย่างน้อย 6 ตัว)" style="flex:1;min-width:200px"><button class="btn sm" id="pwBtn">เปลี่ยนรหัสผ่าน</button></div>
+    </section>
+
+    <div class="savebar hidden" id="saveBar"><button class="btn" id="saveBtn">💾 บันทึกการเปลี่ยนแปลง</button><span class="muted" id="saveNote">มีการแก้ไขที่ยังไม่บันทึก</span></div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+  const $ = id => document.getElementById(id);
+  const HAS_GAS = typeof google !== 'undefined' && google.script && google.script.run;
+  let PW = '', S = null, INFO = null, APPS = [], SHOWN = [], dirty = false;
+  const SEL = new Set();
+  try { PW = sessionStorage.getItem('rscAdminPw') || ''; } catch (e) {}
+
+  function toast(m){ const t = $('toast'); t.textContent = m; t.classList.add('on'); clearTimeout(t._t); t._t = setTimeout(() => t.classList.remove('on'), 2800); }
+  function call(fn, ...args){
+    return new Promise((res, rej) => {
+      if (!HAS_GAS) return rej(new Error('ต้องเปิดผ่าน Apps Script'));
+      google.script.run.withSuccessHandler(res).withFailureHandler(rej)[fn](PW, ...args);
+    });
+  }
+  function esc(s){ return String(s == null ? '' : s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+  function setDirty(v){ dirty = v; $('saveBar').classList.toggle('hidden', !v); }
+
+  /* ---------- login ---------- */
+  function login(){
+    $('loginBtn').disabled = true; $('loginErr').textContent = '';
+    call('adminLoad').then(r => {
+      try { sessionStorage.setItem('rscAdminPw', PW); } catch (e) {}
+      $('loginView').classList.add('hidden'); $('appView').classList.remove('hidden');
+      apply(r); loadApps();
+    }).catch(e => { $('loginErr').textContent = e.message || e; PW = ''; })
+      .finally(() => $('loginBtn').disabled = false);
+  }
+  $('loginBtn').onclick = () => { PW = $('pw').value; login(); };
+  $('pw').addEventListener('keydown', e => { if (e.key === 'Enter') $('loginBtn').click(); });
+  $('logout').onclick = () => { try { sessionStorage.removeItem('rscAdminPw'); } catch (e) {} location.reload(); };
+  if (PW) login();
+
+  /* ---------- tabs ---------- */
+  $('tabs').onclick = e => {
+    const b = e.target.closest('button'); if (!b) return;
+    document.querySelectorAll('#tabs button').forEach(x => x.classList.toggle('on', x === b));
+    document.querySelectorAll('section[data-p]').forEach(s => s.classList.toggle('hidden', s.dataset.p !== b.dataset.t));
+  };
+
+  /* ---------- apply settings to UI ---------- */
+  function apply(r){
+    S = r.settings; INFO = r.info;
+    $('openForm').href = INFO.appUrl; $('openSheet').href = INFO.sheetUrl;
+    $('pwWarn').classList.toggle('hidden', !INFO.usingDefaultPw);
+    drawPositions();
+    document.querySelectorAll('[data-list]').forEach(t => t.value = (S.lists[t.dataset.list] || []).join('\n'));
+    $('intro').value = S.intro || '';
+    const p = S.personality;
+    $('pEnabled').checked = !!p.enabled; $('pTitle').value = p.title || ''; $('pInst').value = p.instruction || '';
+    $('pGroups').value = (p.groups || []).join('\n');
+    drawItems();
+    $('notify').value = S.notifyEmail || ''; $('makePdf').checked = !!S.makePdf;
+    $('links').innerHTML = '• หน้าสมัครงาน: <a target="_blank" href="' + esc(INFO.appUrl) + '">' + esc(INFO.appUrl) + '</a><br>• Google Sheet ข้อมูลผู้สมัคร: <a target="_blank" href="' + esc(INFO.sheetUrl) + '">เปิด</a><br>• โฟลเดอร์ไฟล์ใน Drive: <a target="_blank" href="' + esc(INFO.folderUrl) + '">เปิด</a>';
+    const stSel = $('fSt'); stSel.innerHTML = '<option value="">ทุกสถานะ</option>' + (S.lists.status || []).map(s => '<option>' + esc(s) + '</option>').join('');
+    $('afterSt').innerHTML = '<option value="">— ไม่เปลี่ยน —</option>' + (S.lists.status || []).map(s => '<option>' + esc(s) + '</option>').join('');
+    $('senderName').value = S.senderName || ''; $('replyTo').value = S.replyTo || ''; $('autoReply').checked = !!S.autoReplyEnabled;
+    $('quota').textContent = INFO.quota;
+    $('varChips').innerHTML = (INFO.emailVars || []).map(v => '<button type="button" class="btn ghost sm" data-ins="' + esc(v) + '" style="margin:2px">{{' + esc(v) + '}}</button>').join('');
+    drawTemplates();
+    $('ivTpl').innerHTML = (S.emailTemplates || []).map(t => '<option' + (t.name === 'นัดสัมภาษณ์' ? ' selected' : '') + '>' + esc(t.name) + '</option>').join('');
+    $('ivSt').innerHTML = '<option value="">— ไม่เปลี่ยน —</option>' + (S.lists.status || []).map(s => '<option' + (s === 'นัดสัมภาษณ์' ? ' selected' : '') + '>' + esc(s) + '</option>').join('');
+    setDirty(false);
+  }
+
+  /* ---------- positions ---------- */
+  function drawPositions(){
+    const box = $('posList'); box.innerHTML = '';
+    if (!S.positions.length) box.innerHTML = '<p class="muted">ยังไม่มีตำแหน่ง</p>';
+    S.positions.forEach((p, i) => {
+      const d = document.createElement('div');
+      d.className = 'pos' + (p.open ? '' : ' closed');
+      d.innerHTML = '<div><input type="text" class="n" placeholder="ชื่อตำแหน่ง"><textarea class="d" placeholder="รายละเอียดงาน / คุณสมบัติ / สถานที่ทำงาน (ไม่บังคับ)" style="margin-top:6px;min-height:60px"></textarea></div>' +
+        '<div class="tools"><label class="switch"><input type="checkbox" class="o"> เปิดรับ</label><button class="btn ghost sm up">▲</button><button class="btn ghost sm dn">▼</button><button class="btn red sm del">ลบ</button></div>';
+      d.querySelector('.n').value = p.name; d.querySelector('.d').value = p.detail || ''; d.querySelector('.o').checked = !!p.open;
+      d.querySelector('.n').oninput = e => { p.name = e.target.value; setDirty(true); };
+      d.querySelector('.d').oninput = e => { p.detail = e.target.value; setDirty(true); };
+      d.querySelector('.o').onchange = e => { p.open = e.target.checked; d.classList.toggle('closed', !p.open); setDirty(true); };
+      d.querySelector('.up').onclick = () => { if (i > 0){ S.positions.splice(i - 1, 0, S.positions.splice(i, 1)[0]); drawPositions(); setDirty(true); } };
+      d.querySelector('.dn').onclick = () => { if (i < S.positions.length - 1){ S.positions.splice(i + 1, 0, S.positions.splice(i, 1)[0]); drawPositions(); setDirty(true); } };
+      d.querySelector('.del').onclick = () => { if (confirm('ลบตำแหน่ง "' + p.name + '"?')){ S.positions.splice(i, 1); drawPositions(); setDirty(true); } };
+      box.appendChild(d);
+    });
+  }
+  $('addPos').onclick = () => { S.positions.push({name: '', detail: '', open: true}); drawPositions(); setDirty(true); const ns = document.querySelectorAll('#posList .n'); ns[ns.length - 1].focus(); };
+
+  /* ---------- personality ---------- */
+  function groups(){ return $('pGroups').value.split('\n').map(s => s.trim()).filter(Boolean); }
+  function drawItems(){
+    const box = $('pItems'); box.innerHTML = '';
+    const gs = groups();
+    S.personality.items.forEach((it, i) => {
+      const r = document.createElement('div'); r.className = 'item-row';
+      const opts = ['<option value="">— กลุ่ม —</option>'].concat(gs.concat(it.group && gs.indexOf(it.group) < 0 ? [it.group] : []).map(g => '<option' + (g === it.group ? ' selected' : '') + '>' + esc(g) + '</option>')).join('');
+      r.innerHTML = '<input type="text" class="t"><select class="g">' + opts + '</select><button class="btn red sm">ลบ</button>';
+      r.querySelector('.t').value = it.text;
+      r.querySelector('.t').oninput = e => { it.text = e.target.value; setDirty(true); };
+      r.querySelector('.g').onchange = e => { it.group = e.target.value; setDirty(true); };
+      r.querySelector('button').onclick = () => { S.personality.items.splice(i, 1); drawItems(); setDirty(true); };
+      box.appendChild(r);
+    });
+    $('pCount').textContent = '(' + S.personality.items.length + ' ข้อ)';
+  }
+  $('pAdd').onclick = () => { S.personality.items.push({text: '', group: ''}); drawItems(); setDirty(true); };
+  $('pBulkBtn').onclick = () => $('pBulk').classList.toggle('hidden');
+  $('pBulkAdd').onclick = () => {
+    const lines = $('pBulkText').value.split('\n').map(s => s.trim()).filter(Boolean);
+    const gs = groups();
+    lines.forEach(l => {
+      const parts = l.split(/\s*[|\t]\s*/);
+      const g = (parts[1] || '').trim();
+      if (g && gs.indexOf(g) < 0){ gs.push(g); }
+      S.personality.items.push({text: parts[0].trim(), group: g});
+    });
+    $('pGroups').value = gs.join('\n');
+    $('pBulkText').value = ''; $('pBulk').classList.add('hidden');
+    drawItems(); setDirty(true); toast('เพิ่ม ' + lines.length + ' ข้อแล้ว — อย่าลืมกดบันทึก');
+  };
+  $('pGroups').addEventListener('change', drawItems);
+
+  document.querySelectorAll('[data-list], #intro, #pTitle, #pInst, #pGroups, #notify, #senderName, #replyTo').forEach(e => e.addEventListener('input', () => setDirty(true)));
+  ['pEnabled', 'makePdf', 'autoReply', 'autoTpl'].forEach(id => $(id).addEventListener('change', () => setDirty(true)));
+
+  /* ---------- save ---------- */
+  $('saveBtn').onclick = () => {
+    document.querySelectorAll('[data-list]').forEach(t => S.lists[t.dataset.list] = t.value.split('\n').map(s => s.trim()).filter(Boolean));
+    S.intro = $('intro').value;
+    S.personality.enabled = $('pEnabled').checked; S.personality.title = $('pTitle').value; S.personality.instruction = $('pInst').value;
+    S.personality.groups = groups();
+    S.notifyEmail = $('notify').value.trim(); S.makePdf = $('makePdf').checked;
+    S.senderName = $('senderName').value.trim(); S.replyTo = $('replyTo').value.trim();
+    S.autoReplyEnabled = $('autoReply').checked; S.autoReplyTemplate = $('autoTpl').value;
+    $('saveBtn').disabled = true;
+    call('adminSave', S).then(r => { apply(r); toast('บันทึกแล้ว ✓ หน้าสมัครงานอัปเดตทันที'); })
+      .catch(e => toast('บันทึกไม่สำเร็จ: ' + (e.message || e))).finally(() => $('saveBtn').disabled = false);
+  };
+  window.addEventListener('beforeunload', e => { if (dirty){ e.preventDefault(); e.returnValue = ''; } });
+
+  /* ---------- password ---------- */
+  $('pwBtn').onclick = () => {
+    const n = $('newPw').value;
+    call('adminChangePassword', n).then(() => { PW = n; try { sessionStorage.setItem('rscAdminPw', n); } catch (e) {} $('newPw').value = ''; $('pwWarn').classList.add('hidden'); toast('เปลี่ยนรหัสผ่านแล้ว ✓'); })
+      .catch(e => toast(e.message || e));
+  };
+
+  /* ---------- applicants ---------- */
+  function loadApps(){
+    $('appRows').innerHTML = '<tr><td colspan="9" class="muted">กำลังโหลด...</td></tr>';
+    call('adminListApplicants').then(list => {
+      APPS = list;
+      Array.from(SEL).forEach(r => { if (!list.some(a => a.row === r)) SEL.delete(r); });
+      setTimeout(updSel, 0);
+      const ps = Array.from(new Set(list.map(a => a.position).filter(Boolean)));
+      $('fPos').innerHTML = '<option value="">ทุกตำแหน่ง</option>' + ps.map(p => '<option>' + esc(p) + '</option>').join('');
+      drawApps();
+    }).catch(e => $('appRows').innerHTML = '<tr><td colspan="8" style="color:var(--err)">' + esc(e.message || e) + '</td></tr>');
+  }
+  function drawApps(){
+    const q = $('q').value.trim().toLowerCase(), fp = $('fPos').value, fs = $('fSt').value;
+    const rows = APPS.filter(a => (!fp || a.position === fp) && (!fs || a.status === fs) && (!q || (a.name + a.mobile + a.appNo).toLowerCase().indexOf(q) > -1));
+    SHOWN = rows;
+    if (!rows.length){ $('appRows').innerHTML = '<tr><td colspan="9" class="muted">ไม่พบข้อมูล</td></tr>'; return; }
+    const sts = S.lists.status || [];
+    $('appRows').innerHTML = rows.map(a =>
+      '<tr data-row="' + a.row + '"><td><input type="checkbox" class="sel"' + (SEL.has(a.row) ? ' checked' : '') + '></td><td><span class="chip">' + esc(a.appNo) + '</span></td><td>' + esc(a.date) + '</td><td>' + esc(a.name) + (a.interview ? '<div class="muted" style="font-size:12.5px">📅 ' + esc(a.interview) + '</div>' : '') + '</td><td>' + esc(a.position) + '</td><td>' + esc(a.mobile) + '</td>' +
+      '<td><select class="st">' + sts.concat(sts.indexOf(a.status) < 0 && a.status ? [a.status] : []).map(s => '<option' + (s === a.status ? ' selected' : '') + '>' + esc(s) + '</option>').join('') + '</select></td>' +
+      '<td class="docs">' + docLinks(a) + '</td><td><button class="btn ghost sm gen">' + (a.docx ? 'สร้างใหม่' : 'สร้างใบสมัคร') + '</button></td></tr>').join('');
+  }
+  function docLinks(a){
+    return (a.docx ? '<a target="_blank" href="' + esc(a.docx) + '">ใบสมัคร</a>' : '<span class="muted">-</span>') + (a.pdf ? ' · <a target="_blank" href="' + esc(a.pdf) + '">PDF</a>' : '');
+  }
+  ['q', 'fPos', 'fSt'].forEach(id => $(id).addEventListener('input', drawApps));
+  $('reloadApps').onclick = loadApps;
+
+  /* ---------- เลือกผู้สมัคร ---------- */
+  function updSel(){
+    $('selInfo').textContent = 'เลือก ' + SEL.size + ' คน';
+    $('toMail').disabled = !SEL.size; $('toIv').disabled = !SEL.size;
+    $('toIv').textContent = '📅 นัดสัมภาษณ์คนที่เลือก (' + SEL.size + ')';
+    $('toMail').textContent = '✉️ ส่งอีเมลถึงคนที่เลือก (' + SEL.size + ')';
+    const list = APPS.filter(a => SEL.has(a.row));
+    $('rcptCount').textContent = list.length;
+    $('rcptList').textContent = list.length ? list.map(a => a.name + (a.email ? '' : ' (ไม่มีอีเมล)')).join(', ') : 'ยังไม่ได้เลือก — ไปที่แท็บ "ผู้สมัคร" แล้วติ๊กเลือก';
+    preview(); ivPreview();
+  }
+  $('appRows').addEventListener('change', e => {
+    if (!e.target.classList.contains('sel')) return;
+    const row = +e.target.closest('tr').dataset.row;
+    e.target.checked ? SEL.add(row) : SEL.delete(row); updSel();
+  });
+  $('selAll').onchange = e => { SHOWN.forEach(a => e.target.checked ? SEL.add(a.row) : SEL.delete(a.row)); drawApps(); updSel(); };
+  $('toMail').onclick = () => document.querySelector('#tabs button[data-t=mail]').click();
+  $('toIv').onclick = () => document.querySelector('#tabs button[data-t=iv]').click();
+
+  /* ---------- นัดสัมภาษณ์ ---------- */
+  const pad2 = n => String(n).padStart(2, '0');
+  function ivSlots(){
+    const list = APPS.filter(a => SEL.has(a.row));
+    const t = ($('ivTime').value || '10:00').split(':').map(Number), m = +$('ivMin').value;
+    return list.map((a, i) => { const s = t[0] * 60 + t[1] + i * m, e = s + m;
+      return {a, when: pad2(Math.floor(s / 60) % 24) + ':' + pad2(s % 60) + ' - ' + pad2(Math.floor(e / 60) % 24) + ':' + pad2(e % 60) + ' น.'}; });
+  }
+  function ivPreview(){
+    const sl = ivSlots();
+    $('ivRows').innerHTML = sl.length ? sl.map((x, i) => '<tr><td>' + (i + 1) + '</td><td>' + esc(x.a.name) + (x.a.interview ? '<div class="muted" style="font-size:12px">นัดเดิม: ' + esc(x.a.interview) + ' (จะถูกเลื่อน)</div>' : '') + '</td><td>' + esc(x.a.position) + '</td><td>' + x.when + '</td><td>' + (x.a.email ? esc(x.a.email) : '<span style="color:var(--err)">ไม่มีอีเมล</span>') + '</td></tr>').join('')
+      : '<tr><td colspan="5" class="muted">ยังไม่ได้เลือกผู้สมัคร — ไปที่แท็บ "ผู้สมัคร" แล้วติ๊กเลือก</td></tr>';
+  }
+  ['ivTime', 'ivMin'].forEach(id => $(id).addEventListener('input', ivPreview));
+  $('ivBtn').onclick = () => {
+    if (!SEL.size) return toast('กรุณาเลือกผู้สมัครที่แท็บ "ผู้สมัคร"');
+    if (!$('ivDate').value) return toast('กรุณาเลือกวันที่สัมภาษณ์');
+    if (!confirm('สร้างนัดสัมภาษณ์ ' + SEL.size + ' คน ในวันที่เลือก?')) return;
+    const req = {rows: ivSlots().map(x => x.a.row), date: $('ivDate').value, time: $('ivTime').value, minutes: +$('ivMin').value,
+      location: $('ivLoc').value.trim(), interviewers: $('ivWho').value, note: $('ivNote').value.trim(), invite: $('ivInvite').checked,
+      sendEmail: $('ivMail').checked, templateName: $('ivTpl').value, contact: $('ivContact').value.trim(), contactPhone: $('ivPhone').value.trim(), setStatus: $('ivSt').value};
+    $('ivBtn').disabled = true; $('ivBtn').textContent = 'กำลังสร้างนัด...';
+    call('adminScheduleInterviews', req).then(r => {
+      $('ivCal').href = r.calendarUrl; $('ivCal').classList.remove('hidden');
+      $('ivResult').innerHTML = r.results.map(x => (x.ok ? '✅ ' : '❌ ') + esc(x.name) + ' — ' + esc(x.when) + (x.ok ? (x.invited ? ' · เชิญเข้าปฏิทินแล้ว' : '') + (x.mail ? ' · ' + esc(x.mail) : '') : ' · ' + esc(x.error))).join('<br>');
+      toast('สร้างนัดแล้ว ' + r.results.filter(x => x.ok).length + ' คน'); loadApps();
+    }).catch(e => toast(e.message || e)).finally(() => { $('ivBtn').disabled = false; $('ivBtn').textContent = '📅 สร้างนัดสัมภาษณ์'; });
+  };
+
+  /* ---------- ส่งอีเมล ---------- */
+  function drawTemplates(keep){
+    const opts = (S.emailTemplates || []).map(t => '<option>' + esc(t.name) + '</option>').join('');
+    const cur = keep || $('tplSel').value;
+    $('tplSel').innerHTML = opts + '<option value="__new">+ แม่แบบใหม่</option>';
+    $('autoTpl').innerHTML = opts;
+    $('autoTpl').value = S.autoReplyTemplate || '';
+    if (cur && (S.emailTemplates || []).some(t => t.name === cur)) $('tplSel').value = cur;
+    loadTpl();
+  }
+  function loadTpl(){
+    const t = (S.emailTemplates || []).find(x => x.name === $('tplSel').value);
+    $('mSubject').value = t ? t.subject : ''; $('mBody').value = t ? t.body : '';
+    preview();
+  }
+  function vars(){ const v = {}; document.querySelectorAll('[data-var]').forEach(i => { if (i.value.trim()) v[i.dataset.var] = i.value.trim(); }); return v; }
+  function fill(text, a){
+    const ctx = Object.assign({'ชื่อ-สกุล': a.name, 'ชื่อ': a.first, 'ชื่อเล่น': a.nick, 'ตำแหน่ง': a.position, 'เลขที่ใบสมัคร': a.appNo,
+      'วันที่สมัคร': String(a.date).split(' ')[0], 'บริษัท': '<?= companyName ?>'}, vars());
+    return String(text).replace(/\{\{\s*([^}]+?)\s*\}\}/g, (m, k) => ctx[k] ? ctx[k] : ((INFO.emailVars || []).indexOf(k) > -1 ? '-' : m));
+  }
+  function preview(){
+    const a = APPS.find(x => SEL.has(x.row));
+    $('mPreview').textContent = a ? 'ถึง: ' + (a.email || '(ไม่มีอีเมล)') + '\nหัวเรื่อง: ' + fill($('mSubject').value, a) + '\n\n' + fill($('mBody').value, a)
+      : 'เลือกผู้สมัครอย่างน้อย 1 คนเพื่อดูตัวอย่าง';
+  }
+  $('tplSel').onchange = loadTpl;
+  ['mSubject', 'mBody'].forEach(id => $(id).addEventListener('input', preview));
+  document.querySelectorAll('[data-var]').forEach(i => i.addEventListener('input', preview));
+  let lastFocus = null;
+  ['mSubject', 'mBody'].forEach(id => $(id).addEventListener('focus', () => lastFocus = $(id)));
+  $('varChips').addEventListener('click', e => {
+    const b = e.target.closest('[data-ins]'); if (!b) return;
+    const f = lastFocus || $('mBody'), ins = '{{' + b.dataset.ins + '}}';
+    const s = f.selectionStart || f.value.length;
+    f.value = f.value.slice(0, s) + ins + f.value.slice(f.selectionEnd || s); f.focus(); preview();
+  });
+  function sendReq(test){
+    return {rows: Array.from(SEL), subject: $('mSubject').value, body: $('mBody').value, vars: vars(), setStatus: $('afterSt').value, test};
+  }
+  $('testBtn').onclick = () => {
+    if (!SEL.size) return toast('กรุณาเลือกผู้สมัครอย่างน้อย 1 คน (ใช้ข้อมูลคนแรกเป็นตัวอย่าง)');
+    $('testBtn').disabled = true;
+    call('adminSendEmails', sendReq(true)).then(r => { toast('ส่งทดสอบไปที่ ' + r.to + ' แล้ว'); $('quota').textContent = r.quotaLeft; })
+      .catch(e => toast(e.message || e)).finally(() => $('testBtn').disabled = false);
+  };
+  $('sendBtn').onclick = () => {
+    if (!SEL.size) return toast('กรุณาเลือกผู้สมัครที่แท็บ "ผู้สมัคร"');
+    if (!confirm('ส่งอีเมลถึงผู้สมัคร ' + SEL.size + ' คน ใช่หรือไม่?')) return;
+    $('sendBtn').disabled = true; $('sendBtn').textContent = 'กำลังส่ง...';
+    call('adminSendEmails', sendReq(false)).then(r => {
+      $('quota').textContent = r.quotaLeft;
+      $('sendResult').innerHTML = '✅ ส่งสำเร็จ ' + r.sent + ' ฉบับ' + (r.skipped.length ? '<br>⚠️ ไม่ได้ส่ง ' + r.skipped.length + ' คน: ' + r.skipped.map(s => esc(s.name + ' (' + s.reason + ')')).join(', ') : '') + '<br>ดูประวัติได้ที่แท็บ "ประวัติการส่งอีเมล" ใน Google Sheet';
+      toast('ส่งอีเมลแล้ว ' + r.sent + ' ฉบับ');
+      if (sendReq(false).setStatus) loadApps();
+    }).catch(e => toast(e.message || e)).finally(() => { $('sendBtn').disabled = false; $('sendBtn').textContent = '📨 ส่งอีเมล'; });
+  };
+  $('saveTpl').onclick = () => {
+    let name = $('tplSel').value;
+    if (name === '__new' || !name){ name = prompt('ตั้งชื่อแม่แบบ'); if (!name) return; }
+    const t = {name, subject: $('mSubject').value, body: $('mBody').value};
+    const i = S.emailTemplates.findIndex(x => x.name === name);
+    i > -1 ? S.emailTemplates[i] = t : S.emailTemplates.push(t);
+    call('adminSave', S).then(r => { apply(r); drawTemplates(name); toast('บันทึกแม่แบบ "' + name + '" แล้ว'); }).catch(e => toast(e.message || e));
+  };
+  $('delTpl').onclick = () => {
+    const name = $('tplSel').value; if (!name || name === '__new') return;
+    if (!confirm('ลบแม่แบบ "' + name + '"?')) return;
+    S.emailTemplates = S.emailTemplates.filter(x => x.name !== name);
+    call('adminSave', S).then(r => { apply(r); toast('ลบแล้ว'); }).catch(e => toast(e.message || e));
+  };
+
+  /* ---------- Mail Merge ---------- */
+  $('mmBtn').onclick = () => {
+    $('mmBtn').disabled = true; $('mmBtn').textContent = 'กำลังเตรียมไฟล์...';
+    call('adminBuildMailMerge').then(r => {
+      $('mmLink').href = r.url; $('mmLink').classList.remove('hidden');
+      window.open(r.downloadUrl, '_blank');
+      toast('ดาวน์โหลดข้อมูล ' + r.rows + ' คน');
+    }).catch(e => toast(e.message || e)).finally(() => { $('mmBtn').disabled = false; $('mmBtn').textContent = '⬇️ ดาวน์โหลดไฟล์ Excel'; });
+  };
+  $('appRows').addEventListener('change', e => {
+    if (!e.target.classList.contains('st')) return;
+    const tr = e.target.closest('tr'), row = +tr.dataset.row, v = e.target.value;
+    call('adminSetStatus', row, v).then(() => { APPS.find(a => a.row === row).status = v; toast('อัปเดตสถานะแล้ว'); }).catch(err => toast(err.message || err));
+  });
+  $('appRows').addEventListener('click', e => {
+    if (!e.target.classList.contains('gen')) return;
+    const b = e.target, tr = b.closest('tr'), row = +tr.dataset.row;
+    b.disabled = true; b.textContent = 'กำลังสร้าง...';
+    call('adminGenerate', row).then(d => {
+      const a = APPS.find(x => x.row === row); a.docx = d.docx; a.pdf = d.pdf;
+      tr.querySelector('.docs').innerHTML = docLinks(a); b.textContent = 'สร้างใหม่'; toast('สร้างใบสมัครแล้ว ✓');
+    }).catch(err => { toast(err.message || err); b.textContent = 'ลองใหม่'; }).finally(() => b.disabled = false);
+  });
+})();
+</script>
+</body>
+</html>
